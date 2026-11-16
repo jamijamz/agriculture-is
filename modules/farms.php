@@ -16,12 +16,20 @@ $totalRecords = 0;
 $totalPages = 1;
 $farms = [];
 $farmersList = [];
+$irrigationList = [];
 
 // Fetch farmers list for dropdowns
 try {
     $farmersList = $db->query("SELECT farmer_id, first_name, last_name FROM farmer ORDER BY last_name ASC")->fetchAll();
 } catch (PDOException $e) {
     $farmersList = [];
+}
+
+// Fetch unique irrigation types for the filter dropdown
+try {
+    $irrigationList = $db->query("SELECT DISTINCT irrigation_type FROM farm WHERE irrigation_type IS NOT NULL AND irrigation_type != '' ORDER BY irrigation_type ASC")->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $irrigationList = [];
 }
 
 // Handle Form Submissions (Add / Update / Delete)
@@ -103,8 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Search, Sort, and Pagination Parameters
+// Search, Filter, Sort, and Pagination Parameters
 $search = trim($_GET['search'] ?? '');
+$irrigationFilter = trim($_GET['irrigation_filter'] ?? '');
 $sort = $_GET['sort'] ?? 'farm_id';
 $order = $_GET['order'] ?? 'ASC';
 
@@ -121,15 +130,22 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 try {
-    $whereClause = "";
+    $conditions = [];
     $params = [];
 
     if (!empty($search)) {
-        $whereClause = "WHERE f.farm_name ILIKE :search OR f.location ILIKE :search OR f.soil_type ILIKE :search OR f.irrigation_type ILIKE :search OR fr.first_name ILIKE :search OR fr.last_name ILIKE :search";
+        $conditions[] = "(f.farm_name ILIKE :search OR f.location ILIKE :search OR f.soil_type ILIKE :search OR f.irrigation_type ILIKE :search OR fr.first_name ILIKE :search OR fr.last_name ILIKE :search)";
         $params['search'] = "%$search%";
     }
 
-    // Count query with proper joins for accurate search results
+    if (!empty($irrigationFilter)) {
+        $conditions[] = "f.irrigation_type = :irrigation_filter";
+        $params['irrigation_filter'] = $irrigationFilter;
+    }
+
+    $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+    // Count query with proper joins for accurate search and filter results
     $countQuery = "SELECT COUNT(*) FROM farm f LEFT JOIN farmer fr ON f.farmer_id = fr.farmer_id $whereClause";
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute($params);
@@ -209,22 +225,34 @@ try {
         <div class="alert alert-danger shadow-sm"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <!-- Search & Filter Bar -->
+    <!-- Search & Irrigation Filter Bar -->
     <div class="card shadow-sm mb-4 p-3">
         <form method="GET" class="row g-3 align-items-center">
-            <div class="col-md-8">
+            <div class="col-md-5">
                 <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="Search by farm name, location, soil type, farmer..." value="<?= htmlspecialchars($search) ?>">
-                    <button class="btn btn-custom px-4" type="submit">Search</button>
-                    <?php if (!empty($search)): ?>
-                        <a href="farms.php" class="btn btn-outline-secondary">Reset</a>
-                    <?php endif; ?>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name, location, soil..." value="<?= htmlspecialchars($search) ?>">
                 </div>
             </div>
-            <div class="col-md-4 text-md-end text-muted small">
-                Showing <?= count($farms) ?> of <?= $totalRecords ?> farms
+            <div class="col-md-4">
+                <select name="irrigation_filter" class="form-select">
+                    <option value="">All Irrigation Types</option>
+                    <?php foreach ($irrigationList as $type): ?>
+                        <option value="<?= htmlspecialchars($type) ?>" <?= ($irrigationFilter === $type) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($type) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-custom px-3 w-100" type="submit">Filter</button>
+                <?php if (!empty($search) || !empty($irrigationFilter)): ?>
+                    <a href="farms.php" class="btn btn-outline-secondary">Reset</a>
+                <?php endif; ?>
             </div>
         </form>
+        <div class="mt-2 text-muted small px-1">
+            Showing <?= count($farms) ?> of <?= $totalRecords ?> farms
+        </div>
     </div>
 
     <!-- Farms Table Card -->
@@ -234,7 +262,7 @@ try {
                 <thead>
                     <tr>
                         <th class="ps-4">
-                            <a href="?search=<?= urlencode($search) ?>&sort=farm_id&order=<?= ($sort === 'farm_id' && $order === 'ASC') ? 'DESC' : 'ASC' ?>">
+                            <a href="?search=<?= urlencode($search) ?>&irrigation_filter=<?= urlencode($irrigationFilter) ?>&sort=farm_id&order=<?= ($sort === 'farm_id' && $order === 'ASC') ? 'DESC' : 'ASC' ?>">
                                 ID <?= $sort === 'farm_id' ? ($order === 'ASC' ? '▲' : '▼') : '' ?>
                             </a>
                         </th>
@@ -284,7 +312,7 @@ try {
                     <ul class="pagination mb-0">
                         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                             <li class="page-item <?= ($page === $i) ? 'active' : '' ?>">
-                                <a class="page-link" href="?search=<?= urlencode($search) ?>&sort=<?= $sort ?>&order=<?= $order ?>&page=<?= $i ?>"><?= $i ?></a>
+                                <a class="page-link" href="?search=<?= urlencode($search) ?>&irrigation_filter=<?= urlencode($irrigationFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>&page=<?= $i ?>"><?= $i ?></a>
                             </li>
                         <?php endfor; ?>
                     </ul>
