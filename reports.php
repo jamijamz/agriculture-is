@@ -124,7 +124,7 @@ try {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-custom-title mb-1">Agricultural Reports</h2>
-            <p class="text-muted small mb-0">Generate analytical summaries and operational reports from your database[cite: 4].</p>
+            <p class="text-muted small mb-0">Generate analytical summaries and operational reports from your database.</p>
         </div>
         <button onclick="window.print()" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">🖨️ Print Report</button>
     </div>
@@ -135,13 +135,13 @@ try {
             <div class="col-md-8">
                 <div class="btn-group w-100 shadow-sm" role="group">
                     <a href="reports.php?type=farms" class="btn <?= ($reportType === 'farms') ? 'btn-custom text-white fw-semibold' : 'btn-outline-light text-dark border' ?>">
-                        Farmers & Their Farms[cite: 4]
+                        Farmers & Their Farms
                     </a>
                     <a href="reports.php?type=plantings_crop" class="btn <?= ($reportType === 'plantings_crop') ? 'btn-custom text-white fw-semibold' : 'btn-outline-light text-dark border' ?>">
-                        Crops Planted per Farm[cite: 4]
+                        Crops Planted per Farm
                     </a>
                     <a href="reports.php?type=harvests_value" class="btn <?= ($reportType === 'harvests_value') ? 'btn-custom text-white fw-semibold' : 'btn-outline-light text-dark border' ?>">
-                        Harvests & Estimated Value[cite: 4]
+                        Harvests & Estimated Value
                     </a>
                 </div>
             </div>
@@ -197,11 +197,11 @@ try {
         <div class="card-header bg-white py-3">
             <h5 class="fw-bold mb-0 text-custom-title">
                 <?php if ($reportType === 'farms'): ?>
-                    🌱 Farmers & Their Managed Farms Report[cite: 4]
+                    🌱 Farmers & Their Managed Farms Report
                 <?php elseif ($reportType === 'plantings_crop'): ?>
-                    🌾 Crops Planted per Farm Report[cite: 4]
+                    🌾 Crops Planted per Farm Report
                 <?php else: ?>
-                    💰 Harvest Records & Estimated Value Report[cite: 4]
+                    💰 Harvest Records & Estimated Value Report
                 <?php endif; ?>
             </h5>
         </div>
